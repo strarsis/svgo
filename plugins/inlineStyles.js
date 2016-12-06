@@ -80,9 +80,6 @@ exports.fn = function(data, opts) {
       var selectedEl = selectedEls[selectedElIndex];
 
       // merge element(inline) styles + matching <style/> styles
-      var elInlineStyleAttr = selectedEl.attr('style'),
-          elInlineStyles    = elInlineStyleAttr.value,
-          inlineCssAst      = csso.parse(elInlineStyles, {context: 'block'});      
 
       var newInlineCssAst   = csso.parse('', {context: 'block'}); // for an empty css ast (in block context)
       csso.walk(selectorItem.rulesetNode, function(node, item) {
@@ -90,11 +87,21 @@ exports.fn = function(data, opts) {
           newInlineCssAst.declarations.insert(item);
         }
       });
-      csso.walk(inlineCssAst, function(node, item) {
-        if(node.type === 'Declaration') {
-          newInlineCssAst.declarations.insert(item);
-        }
-      });
+
+      var elInlineStyleAttr = selectedEl.attr('style');
+      if(elInlineStyleAttr) {
+        var elInlineStyles = elInlineStyleAttr.value,
+            inlineCssAst   = csso.parse(elInlineStyles, {context: 'block'});
+
+        csso.walk(inlineCssAst, function(node, item) {
+            if(node.type === 'Declaration') {
+            newInlineCssAst.declarations.insert(item);
+            }
+        });
+      } else {
+        elInlineStyleAttr = {name:'style', value:'', prefix:'', local:'style' }
+      }
+
       var newCss = csso.translate(newInlineCssAst);
 
       elInlineStyleAttr.value = newCss;
